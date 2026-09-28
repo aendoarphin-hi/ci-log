@@ -1,0 +1,120 @@
+// ---------------------------------------------------------------
+// Hayden brand palette
+// ---------------------------------------------------------------
+$hayden-blue:          #004080;
+$hayden-blue-dark:     #003466;
+$hayden-blue-darker:   #001f3e;
+$hayden-blue-light:    #0059b3;
+$hayden-blue-lighter:  #1c75bb;
+
+$neutral:              #666666;
+$neutral-dark:         #414142;
+$neutral-darker:       #272727;
+$neutral-darkest:      #000000;
+$neutral-light:        #aaaaaa;
+$neutral-lighter:      #cccccc;
+$neutral-lightest:     #d9d9d9;
+
+$white:                #ffffff;
+
+// ---------------------------------------------------------------
+// Map onto Bootstrap's theme variables before importing Bootstrap
+// ---------------------------------------------------------------
+$primary:       $hayden-blue-lighter;
+$secondary:     $neutral;
+$light:         $neutral-lightest;
+$dark:          $neutral-darker;
+
+$body-color:    $neutral-darker;
+$body-bg:       #f4f6f8;
+
+$border-radius:      .375rem;
+$border-radius-sm:   .25rem;
+$border-radius-lg:   .5rem;
+
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+@import "~bootstrap/scss/bootstrap";
+
+// ---------------------------------------------------------------
+// App-level styling
+// ---------------------------------------------------------------
+:root {
+  --hayden-blue: #{$hayden-blue};
+  --hayden-blue-dark: #{$hayden-blue-dark};
+  --hayden-blue-darker: #{$hayden-blue-darker};
+  --hayden-blue-light: #{$hayden-blue-light};
+  --hayden-blue-lighter: #{$hayden-blue-lighter};
+
+  --neutral: #{$neutral};
+  --neutral-dark: #{$neutral-dark};
+  --neutral-darker: #{$neutral-darker};
+  --neutral-darkest: #{$neutral-darkest};
+  --neutral-light: #{$neutral-light};
+  --neutral-lighter: #{$neutral-lighter};
+  --neutral-lightest: #{$neutral-lightest};
+
+  --white: #{$white};
+}
+
+body {
+  background-color: $body-bg;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background-color: $white;
+  color: $white;
+  padding: .85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  color: $neutral-dark;
+}
+
+.app-header__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.app-header__subtitle {
+  font-size: .8rem;
+}
+
+.app-main {
+  flex: 1;
+  padding: 1.75rem 1.5rem 3rem;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-heading {
+  margin-bottom: 1.25rem;
+}
+
+.page-heading h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: $neutral-darkest;
+  margin-bottom: .2rem;
+}
+
+.page-heading p {
+  color: $neutral;
+  margin-bottom: 0;
+  font-size: .92rem;
+}
