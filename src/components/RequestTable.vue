@@ -13,7 +13,7 @@
         </select>
       </div>
       <div class="text-muted small">
-        {{ sortedRequests.length }} of {{ requests.length }} request(s)
+        Showing {{ sortedRequests.length }} of {{ requests.length }} request{{ requests.length === 1 ? '' : 's' }}
       </div>
     </div>
 
@@ -55,6 +55,9 @@
               </span>
             </td>
             <td>
+              {{  request.last_updated ?? '-' }}
+            </td>
+            <td>
               <div class="d-flex gap-1">
                 <button class="btn btn-sm btn-outline-secondary" @click="$emit('edit', request)">
                   Edit
@@ -88,12 +91,13 @@ export default {
       sortKey: 'dateLogged',
       sortDir: 'desc',
       columns: [
-        { key: 'dateLogged', label: 'Date logged' },
+        { key: 'dateLogged', label: 'Date Logged' },
         { key: 'objective', label: 'Objective' },
         { key: 'scope', label: 'Scope' },
         { key: 'stakeholders', label: 'Stakeholder(s)' },
         { key: 'startDate', label: 'Timeline' },
-        { key: 'status', label: 'Status' }
+        { key: 'status', label: 'Status' },
+        { key: 'updated', label: 'Last Updated' }
       ]
     }
   },

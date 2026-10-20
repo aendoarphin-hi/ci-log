@@ -2,8 +2,8 @@
   <div>
     <div class="page-heading d-flex align-items-start justify-content-between flex-wrap gap-2">
       <div>
-        <h1>Continuous improvement requests</h1>
-        <p>Log, sort and track improvement requests from intake through completion.</p>
+        <h1>Requests</h1>
+        <p>View existing requests or submit a new one</p>
       </div>
       <button
         v-if="!showForm"
@@ -47,7 +47,7 @@ import RequestTable from '../components/RequestTable.vue'
 const STORAGE_KEY = 'ci-log'
 
 export default {
-  name: 'RequestLog',
+  name: 'RequestView',
   components: {
     RequestForm,
     RequestTable,
@@ -60,7 +60,7 @@ export default {
       editingRequest: null
     }
   },
-  created () {
+  mounted () {
     this.loadRequests()
   },
   methods: {
