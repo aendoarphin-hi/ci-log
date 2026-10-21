@@ -5,34 +5,41 @@
         <h1>Approvals</h1>
         <p>View existing approvals or submit a new one</p>
       </div>
-      <button
-        v-if="!showForm"
-        class="btn btn-primary align-self-start"
-        @click="showForm = true"
-      >
-        New Button Here
-      </button>
     </div>
 
     <div v-if="showForm" class="mb-4">
-      <RequestForm
-        :editing-request="editingRequest"
+      <ResourceForm
+        :editing-item="editingRequest"
+        :fields="approvalFields"
+        :blank-item="blankApproval"
+        resource-name="Approval"
         @save="saveRequest"
         @cancel-edit="cancelEdit"
         @cancel-add="cancelAdd"
       />
     </div>
 
-    <RequestTable v-if="!showForm"
+    <ResourceTable v-if="!showForm"
       class="d-none d-lg-block"
-      :requests="requests"
+      :items="requests"
+      :columns="tableColumns"
+      item-name="approval"
+      :search-fields="['title', 'description']"
+      status-key="status"
+      :statuses="approvalStatuses"
       @edit="startEdit"
       @delete="deleteRequest"
     />
 
-    <RequestGrid v-if="!showForm"
+    <ResourceGrid v-if="!showForm"
       class="d-lg-none"
-      :requests="requests"
+      :items="requests"
+      :columns="tableColumns"
+      item-name="approval"
+      title-field="title"
+      :search-fields="['title', 'description']"
+      status-key="status"
+      :statuses="approvalStatuses"
       @edit="startEdit"
       @delete="deleteRequest"
     />
@@ -40,24 +47,65 @@
 </template>
 
 <script>
-import RequestForm from '../components/RequestForm.vue'
-import RequestGrid from '../components/RequestGrid.vue'
-import RequestTable from '../components/RequestTable.vue'
+import ResourceForm from '../components/ResourceForm.vue'
+import ResourceGrid from '../components/ResourceGrid.vue'
+import ResourceTable from '../components/ResourceTable.vue'
 
 const STORAGE_KEY = 'ci-log'
 
 export default {
   name: 'RequestView',
   components: {
-    RequestForm,
-    RequestTable,
-    RequestGrid
+    ResourceForm,
+    ResourceTable,
+    ResourceGrid
   },
   data () {
     return {
       requests: [],
       showForm: false,
       editingRequest: null
+    }
+  },
+  computed: {
+    approvalFields () {
+      return [
+        {
+          key: 'title',
+          label: 'Title',
+          type: 'text',
+          placeholder: 'What is being approved?',
+          required: true
+        },
+        {
+          key: 'description',
+          label: 'Description',
+          type: 'textarea',
+          rows: 2,
+          placeholder: 'Details of the approval request',
+          required: true
+        },
+        { key: 'status', label: 'Status', type: 'select', options: this.approvalStatuses }
+      ]
+    },
+    blankApproval () {
+      return {
+        title: '',
+        description: '',
+        status: 'Pending'
+      }
+    },
+    approvalStatuses () {
+      return ['Pending', 'Approved', 'Rejected']
+    },
+    tableColumns () {
+      const fmt = this.formatDate
+      return [
+        { key: 'title', label: 'Title' },
+        { key: 'description', label: 'Description' },
+        { key: 'status', label: 'Status' },
+        { key: 'dateLogged', label: 'Logged', format: v => fmt(v) }
+      ]
     }
   },
   mounted () {
@@ -116,6 +164,16 @@ export default {
     },
     today () {
       return new Date().toISOString().slice(0, 10)
+    },
+    formatDate (value) {
+      if (!value) return '\u2014'
+      const date = new Date(`${value}T00:00:00`)
+      if (Number.isNaN(date.getTime())) return value
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
     }
   }
 }

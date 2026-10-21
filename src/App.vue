@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell">
-    <header class="app-header">
+    <header class="app-header flex-col gap-1 flex-md-row">
       <div class="app-header__brand">
         <img src="./assets/images/hayden-blue.svg" alt="Hayden logo" class="app-header__logo">
         <div>

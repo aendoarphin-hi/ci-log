@@ -15,24 +15,38 @@
     </div>
 
     <div v-if="showForm" class="mb-4">
-      <RequestForm
-        :editing-request="editingRequest"
+      <ResourceForm
+        :editing-item="editingRequest"
+        :fields="requestFields"
+        :blank-item="blankRequest"
+        resource-name="Request"
         @save="saveRequest"
         @cancel-edit="cancelEdit"
         @cancel-add="cancelAdd"
       />
     </div>
 
-    <RequestTable v-if="!showForm"
+    <ResourceTable v-if="!showForm"
       class="d-none d-lg-block"
-      :requests="requests"
+      :items="requests"
+      :columns="tableColumns"
+      item-name="request"
+      :search-fields="['objective', 'scope', 'stakeholders']"
+      status-key="status"
+      :statuses="requestStatuses"
       @edit="startEdit"
       @delete="deleteRequest"
     />
 
-    <RequestGrid v-if="!showForm"
+    <ResourceGrid v-if="!showForm"
       class="d-lg-none"
-      :requests="requests"
+      :items="requests"
+      :columns="tableColumns"
+      item-name="request"
+      title-field="objective"
+      :search-fields="['objective', 'scope', 'stakeholders']"
+      status-key="status"
+      :statuses="requestStatuses"
       @edit="startEdit"
       @delete="deleteRequest"
     />
@@ -40,18 +54,18 @@
 </template>
 
 <script>
-import RequestForm from '../components/RequestForm.vue'
-import RequestGrid from '../components/RequestGrid.vue'
-import RequestTable from '../components/RequestTable.vue'
+import ResourceForm from '../components/ResourceForm.vue'
+import ResourceGrid from '../components/ResourceGrid.vue'
+import ResourceTable from '../components/ResourceTable.vue'
 
 const STORAGE_KEY = 'ci-log'
 
 export default {
   name: 'RequestView',
   components: {
-    RequestForm,
-    RequestTable,
-    RequestGrid
+    ResourceForm,
+    ResourceTable,
+    ResourceGrid
   },
   data () {
     return {
@@ -60,13 +74,71 @@ export default {
       editingRequest: null
     }
   },
+  computed: {
+    requestFields () {
+      return [
+        {
+          key: 'objective',
+          label: 'Objective',
+          type: 'textarea',
+          rows: 2,
+          placeholder: 'What is the purpose of this request? What\'s the benefit, and how does it add value to an existing process?',
+          required: true
+        },
+        {
+          key: 'scope',
+          label: 'Scope',
+          type: 'textarea',
+          rows: 2,
+          placeholder: "What's included, and what's explicitly out of bounds?",
+          required: true
+        },
+        {
+          key: 'stakeholders',
+          label: 'Stakeholders',
+          type: 'text',
+          placeholder: 'Requester and anyone else impacted, e.g. Jane Doe (requester), Mark Lee (IT)',
+          required: true
+        },
+        { key: 'startDate', label: 'Start date', type: 'date', required: true },
+        { key: 'endDate', label: 'Target completion date', type: 'date' },
+        { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses }
+      ]
+    },
+    blankRequest () {
+      return {
+        objective: '',
+        scope: '',
+        stakeholders: '',
+        startDate: '',
+        endDate: '',
+        status: 'New'
+      }
+    },
+    requestStatuses () {
+      return ['New', 'In Progress', 'On Hold', 'Complete']
+    },
+    tableColumns () {
+      const fmt = this.formatDate
+      return [
+        { key: 'dateLogged', label: 'Date Logged', format: v => fmt(v) },
+        { key: 'objective', label: 'Objective' },
+        { key: 'scope', label: 'Scope' },
+        { key: 'stakeholders', label: 'Stakeholders' },
+        { key: 'dates', label: 'Dates', render: item => `${fmt(item.startDate)}${item.endDate ? ' \u2013 ' + fmt(item.endDate) : ''}` },
+        { key: 'status', label: 'Status' },
+        { key: 'last_updated', label: 'Last Updated', format: v => fmt(v) }
+      ]
+    }
+  },
   mounted () {
     this.loadRequests()
   },
   methods: {
     loadRequests () {
       try {
-        const raw = window.localStorage.getItem(STORAGE_KEY)
+        this.requests = fetch(this.$api)
+        console.log(raw)
         this.requests = raw ? JSON.parse(raw) : []
       } catch (err) {
         console.error('Could not load saved requests', err)
@@ -75,7 +147,7 @@ export default {
     },
     persist () {
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.requests))
+        console.log(this.requests)
       } catch (err) {
         console.error('Could not save requests', err)
       }
@@ -93,7 +165,7 @@ export default {
           dateLogged: this.today()
         })
       }
-      this.persist()
+      this.submitRequest()
       this.cancelEdit()
     },
     startEdit (request) {
@@ -109,13 +181,23 @@ export default {
     },
     deleteRequest (id) {
       this.requests = this.requests.filter(r => r.id !== id)
-      this.persist()
+      this.submitRequest()
     },
     generateId () {
       return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     },
     today () {
       return new Date().toISOString().slice(0, 10)
+    },
+    formatDate (value) {
+      if (!value) return '\u2014'
+      const date = new Date(`${value}T00:00:00`)
+      if (Number.isNaN(date.getTime())) return value
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
     }
   }
 }

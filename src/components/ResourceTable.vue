@@ -1,36 +1,54 @@
 <template>
   <div>
-    <div class="d-flex flex-wrap align-items-center justify-content-between toolbar mb-3">
+    <div
+      class="d-flex flex-wrap align-items-center justify-content-between toolbar mb-3">
       <div class="d-flex flex-row toolbar">
-        <input v-model.trim="searchTerm" type="search" class="form-control" style="min-width: 370px; width: 270px"
-          placeholder="Search objective, scope or stakeholder" />
-        <select v-model="statusFilter" class="form-select" style="max-width: 170px">
+        <input
+          v-model.trim="searchTerm"
+          type="search"
+          class="form-control"
+          style="min-width: 370px; width: 270px"
+          :placeholder="`Search ${searchableLabels.join(', ')}`" />
+        <select
+          v-if="hasStatusFilter"
+          v-model="statusFilter"
+          class="form-select"
+          style="max-width: 170px">
           <option value="">All Statuses</option>
-          <option value="New">New</option>
-          <option value="In Progress">In Progress</option>
-          <option value="On Hold">On Hold</option>
-          <option value="Complete">Complete</option>
+          <option v-for="status in statuses" :key="status" :value="status">
+            {{ status }}
+          </option>
         </select>
       </div>
       <div class="text-muted small">
-        Showing {{ sortedRequests.length }} of {{ requests.length }} request{{ requests.length === 1 ? '' : 's' }}
+        Showing {{ sortedItems.length }} of {{ items.length }} {{ itemName
+        }}{{ items.length === 1 ? "" : "s" }}
       </div>
     </div>
 
-    <div v-if="requests.length === 0" class="empty-state">
-      <p class="mb-1">No requests logged yet.</p>
-      <p class="mb-0 small">Use the form to add the first continuous improvement request.</p>
+    <div v-if="items.length === 0" class="empty-state">
+      <p class="mb-1">No {{ itemName.toLowerCase() }}s logged yet.</p>
+      <p class="mb-0 small">
+        Use the form to add the first {{ itemName.toLowerCase() }}.
+      </p>
     </div>
 
-    <div v-else class="table-responsive border shadow-sm rounded"
-      style="max-height: 80vh; overflow-y: auto;">
+    <div
+      v-else
+      class="table-responsive border shadow-sm rounded"
+      style="max-height: 80vh; overflow-y: auto">
       <table class="table table-striped ci-table bg-white">
         <thead style="position: sticky; top: 0">
           <tr>
-            <th v-for="column in columns" :key="column.key" :class="{ 'is-sorted': sortKey === column.key }"
+            <th
+              v-for="column in displayColumns"
+              :key="column.key"
+              :class="{ 'is-sorted': sortKey === column.key }"
               @click="setSort(column.key)">
               {{ column.label }}
-              <span class="sort-caret" :style="{ opacity: sortKey === column.key ? '1' : '0' }">
+              <span
+                class="sort-caret"
+                :style="{ opacity: sortKey === column.key ? '1' : '0' }">
                 {{ sortDir === "asc" ? "\u25B2" : "\u25BC" }}
               </span>
             </th>
@@ -38,31 +56,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="request in [
-            ...sortedRequests
-          ]" :key="request.id">
-            <td>{{ formatDate(request.dateLogged) }}</td>
-            <td class="cell-objective">{{ request.objective }}</td>
-            <td>{{ request.scope }}</td>
-            <td>{{ request.stakeholders }}</td>
-            <td>
-              {{ formatDate(request.startDate) }}
-              <span v-if="request.endDate"> &ndash; {{ formatDate(request.endDate) }}</span>
-            </td>
-            <td>
-              <span :class="['status-pill', statusClass(request.status)]">
-                {{ request.status }}
-              </span>
-            </td>
-            <td>
-              {{  request.last_updated ?? '-' }}
+          <tr v-for="item in sortedItems" :key="item.id">
+            <td v-for="column in displayColumns" :key="column.key">
+              {{ cellValue(item, column) }}
             </td>
             <td>
               <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-secondary" @click="$emit('edit', request)">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="$emit('edit', item)">
                   Edit
                 </button>
-                <button class="btn btn-sm btn-outline-danger" @click="$emit('delete', request.id)">
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  @click="$emit('delete', item.id)">
                   Delete
                 </button>
               </div>
@@ -76,9 +83,29 @@
 
 <script>
 export default {
-  name: 'RequestTable',
+  name: 'ResourceTable',
   props: {
-    requests: {
+    items: {
+      type: Array,
+      default: () => []
+    },
+    columns: {
+      type: Array,
+      default: () => []
+    },
+    itemName: {
+      type: String,
+      default: 'item'
+    },
+    searchFields: {
+      type: Array,
+      default: () => []
+    },
+    statusKey: {
+      type: String,
+      default: 'status'
+    },
+    statuses: {
       type: Array,
       default: () => []
     }
@@ -88,39 +115,53 @@ export default {
     return {
       searchTerm: '',
       statusFilter: '',
-      sortKey: 'dateLogged',
-      sortDir: 'desc',
-      columns: [
-        { key: 'dateLogged', label: 'Date Logged' },
-        { key: 'objective', label: 'Objective' },
-        { key: 'scope', label: 'Scope' },
-        { key: 'stakeholders', label: 'Stakeholder(s)' },
-        { key: 'startDate', label: 'Timeline' },
-        { key: 'status', label: 'Status' },
-        { key: 'updated', label: 'Last Updated' }
-      ]
+      sortKey: this.defaultSortKey,
+      sortDir: 'desc'
     }
   },
   computed: {
-    filteredRequests () {
-      const term = this.searchTerm.toLowerCase()
-      return this.requests.filter((request) => {
-        const matchesStatus = !this.statusFilter || request.status === this.statusFilter
-        const matchesTerm =
-          !term ||
-          [request.objective, request.scope, request.stakeholders]
-            .join(' ')
-            .toLowerCase()
-            .includes(term)
-        return matchesStatus && matchesTerm
+    defaultSortKey () {
+      return this.columns.length ? this.columns[0].key : ''
+    },
+    displayColumns () {
+      return this.columns.filter((column) => column.key !== '__actions__')
+    },
+    hasStatusFilter () {
+      return this.statuses.length > 0
+    },
+    searchableFields () {
+      return this.searchFields.length
+        ? this.searchFields
+        : this.displayColumns.map((c) => c.key)
+    },
+    searchableLabels () {
+      return this.searchableFields.map((key) => {
+        const column = this.displayColumns.find((c) => c.key === key)
+        return column ? column.label : key
       })
     },
-    sortedRequests () {
-      const list = [...this.filteredRequests]
+    filteredItems () {
+      const term = this.searchTerm.toLowerCase()
+      const status = this.statusFilter
+      return this.items.filter((item) => {
+        const matchesTerm = this.searchableFields.some((key) => {
+          const value = this.cellValue(item, { key })
+          return String(value == null ? '' : value)
+            .toLowerCase()
+            .includes(term)
+        })
+        const matchesStatus =
+          !status || String(item[this.statusKey]) === status
+        return matchesTerm && matchesStatus
+      })
+    },
+    sortedItems () {
+      const list = [...this.filteredItems]
       const { sortKey, sortDir } = this
+      if (!sortKey) return list
       list.sort((a, b) => {
-        const valA = (a[sortKey] || '').toString().toLowerCase()
-        const valB = (b[sortKey] || '').toString().toLowerCase()
+        const valA = String(a[sortKey] || '').toLowerCase()
+        const valB = String(b[sortKey] || '').toLowerCase()
         if (valA < valB) return sortDir === 'asc' ? -1 : 1
         if (valA > valB) return sortDir === 'asc' ? 1 : -1
         return 0
@@ -130,12 +171,23 @@ export default {
   },
   methods: {
     setSort (key) {
+      if (!key) return
       if (this.sortKey === key) {
         this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
       } else {
         this.sortKey = key
         this.sortDir = 'asc'
       }
+    },
+    cellValue (item, column) {
+      if (column.render) {
+        return column.render(item)
+      }
+      const value = item[column.key]
+      if (column.format) {
+        return column.format(value, item)
+      }
+      return value
     },
     formatDate (value) {
       if (!value) return '\u2014'
@@ -162,15 +214,22 @@ export default {
 
 <style scoped>
 /* y scrollbar */
-#app > div > main > div > div.d-none.d-lg-block > div.table-responsive::-webkit-scrollbar {
+#app
+  > div
+  > main
+  > div
+  > div.d-none.d-lg-block
+  > div.table-responsive::-webkit-scrollbar {
   border-radius: 0 var(--bs-border-radius) var(--bs-border-radius) 0;
   width: 8px;
 }
+
 div::-webkit-scrollbar-thumb {
   background-color: var(--neutral-lighter);
   border-radius: var(--bs-border-radius);
   margin: 4px;
 }
+
 /* table */
 .ci-table {
   border-collapse: collapse;
@@ -206,10 +265,6 @@ div::-webkit-scrollbar-thumb {
 .ci-table td {
   font-size: 0.88rem;
   vertical-align: middle;
-}
-
-.ci-table .cell-objective {
-  max-width: 320px;
 }
 
 .status-pill {
