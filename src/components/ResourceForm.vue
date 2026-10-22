@@ -17,8 +17,7 @@
             class="form-control"
             :rows="field.rows || 2"
             :placeholder="field.placeholder || ''"
-            :required="field.required"
-          ></textarea>
+            :required="field.required"></textarea>
 
           <input
             v-else-if="field.type === 'date'"
@@ -26,18 +25,19 @@
             type="date"
             class="form-control"
             :placeholder="field.placeholder || ''"
-            :required="field.required"
-          />
+            :required="field.required" />
 
           <select
             v-else-if="field.type === 'select'"
             v-model="form[field.key]"
-            class="form-select text-capitalize"
-          >
+            class="form-select text-capitalize">
             <option v-if="field.placeholder" value="" disabled>
               {{ field.placeholder }}
             </option>
-            <option v-for="option in field.options" :key="option" :value="option">
+            <option
+              v-for="option in field.options"
+              :key="option"
+              :value="option">
               {{ option }}
             </option>
           </select>
@@ -48,17 +48,28 @@
               @change="handleFileChange"
               type="file"
               multiple
-              class="form-control"
-            />
+              class="form-control" />
 
-            <span v-for="(f, i) in form.files" :key="f.name" class="mt-1">
-              <span
-                @click="removeFile(i)"
-                class="me-1 cursor-pointer badge text-secondary bg-light"
-              >
-                {{ f.name }} <span class="text-danger">&times;</span>
+            <template v-if="!editingId">
+              <span v-for="(f, i) in form.files" :key="i" class="mt-1">
+                <span
+                  @click="removeFile(i)"
+                  class="me-1 cursor-pointer badge text-secondary bg-light">
+                  {{ f.name }} <span class="text-danger">&times;</span>
+                </span>
               </span>
-            </span>
+            </template>
+
+            <template v-else>
+              <!-- list all attached files of the editing item -->
+              <span v-for="(f, i) in existingFiles" :key="i" class="mt-1">
+                <span
+                  @click="removeFile(i)"
+                  class="me-1 cursor-pointer badge text-secondary bg-light">
+                  {{ f.name }} <span class="text-danger">&times;</span>
+                </span>
+              </span>
+            </template>
           </div>
 
           <input
@@ -67,10 +78,7 @@
             type="text"
             class="form-control"
             :placeholder="field.placeholder || ''"
-            :required="field.required"
-          />
-
-          <!-- add multiple files input for adding document attachments -->
+            :required="field.required" />
         </div>
 
         <div class="d-flex gap-2 justify-content-end">
@@ -81,16 +89,14 @@
             v-if="editingItem"
             type="button"
             class="btn btn-outline-secondary"
-            @click="$emit('cancel-edit')"
-          >
+            @click="$emit('cancel-edit')">
             Cancel
           </button>
           <button
             v-else
             type="button"
             class="btn btn-outline-secondary"
-            @click="$emit('cancel-add')"
-          >
+            @click="$emit('cancel-add')">
             Cancel
           </button>
         </div>
@@ -124,7 +130,8 @@ export default {
   data () {
     return {
       form: {},
-      fileInputElement: null
+      fileInputElement: null,
+      existingFiles: []
     }
   },
   computed: {
@@ -143,8 +150,9 @@ export default {
   watch: {
     editingItem: {
       immediate: true,
-      handler (item) {
+      async handler (item) {
         this.form = item ? { ...item } : { ...this.blankItem }
+        this.existingFiles = (await this.$axios.get(this.$api + '?docs')).data || []
       }
     }
   },
@@ -156,7 +164,9 @@ export default {
       body.append(
         'request',
         JSON.stringify(
-          Object.fromEntries(Object.entries(this.form).filter(([key]) => key !== 'files'))
+          Object.fromEntries(
+            Object.entries(this.form).filter(([key]) => key !== 'files')
+          )
         )
       )
 
@@ -176,7 +186,9 @@ export default {
             2
           )
         )
-      ) { return }
+      ) {
+        return
+      }
 
       this.$emit('save', body)
 
@@ -203,18 +215,18 @@ export default {
 </script>
 
 <style scoped>
-  .card-form {
-    border: 1px solid var(--neutral-lightest);
-  }
+.card-form {
+  border: 1px solid var(--neutral-lightest);
+}
 
-  .card-form .card-header {
-    background-color: var(--hayden-blue-lighter);
-    border-bottom: 1px solid var(--neutral-lightest);
-    font-weight: 600;
-    color: white;
-  }
+.card-form .card-header {
+  background-color: var(--hayden-blue-lighter);
+  border-bottom: 1px solid var(--neutral-lightest);
+  font-weight: 600;
+  color: white;
+}
 
-  .required-mark {
-    color: var(--bs-danger);
-  }
+.required-mark {
+  color: var(--bs-danger);
+}
 </style>

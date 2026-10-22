@@ -17,7 +17,7 @@
     <div v-if="showForm" class="mb-4">
       <ResourceForm
         :editing-item="editingRequest"
-        :fields="requestFields"
+        :fields="formFields"
         :blank-item="blankRequest"
         resource-name="Request"
         @save="saveRequest"
@@ -58,6 +58,13 @@ import ResourceForm from '../components/ResourceForm.vue'
 import ResourceGrid from '../components/ResourceGrid.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
+const REQUEST_STATUS_BADGE_CLASSES = {
+  new: 'bg-info-subtle text-info-emphasis',
+  'in progress': 'bg-warning-subtle text-warning-emphasis',
+  'on hold': 'bg-secondary opacity-50',
+  complete: 'bg-success-subtle text-success-emphasis'
+}
+
 export default {
   name: 'RequestView',
   components: {
@@ -73,7 +80,7 @@ export default {
     }
   },
   computed: {
-    requestFields () {
+    formFields () {
       return [
         {
           key: 'objective',
@@ -99,7 +106,7 @@ export default {
           required: true
         },
         { key: 'startDate', label: 'Start date', type: 'date', required: true },
-        { key: 'endDate', label: 'Target completion date', type: 'date' },
+        { key: 'endDate', label: 'Target completion', type: 'date' },
         { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses },
         { key: 'files', label: 'Attachments', type: 'file' }
       ]
@@ -120,13 +127,16 @@ export default {
     },
     tableColumns () {
       const fmt = this.formatDate
+      // key = db column name
       return [
-        { key: 'dateLogged', label: 'Date Logged', format: v => fmt(v) },
+        { key: 'created_at', label: 'Date Logged', format: v => fmt(v) },
         { key: 'objective', label: 'Objective' },
         { key: 'scope', label: 'Scope' },
         { key: 'stakeholders', label: 'Stakeholders' },
-        { key: 'dates', label: 'Dates', render: item => `${fmt(item.startDate)}${item.endDate ? ' \u2013 ' + fmt(item.endDate) : ''}` },
-        { key: 'status', label: 'Status' },
+        { key: 'start_date', label: 'Start', format: v => fmt(v) },
+        { key: 'end_date', label: 'Target Completion Date', format: v => fmt(v) },
+        { key: 'status', label: 'Status', statuses: REQUEST_STATUS_BADGE_CLASSES },
+        { key: 'files', label: 'Attachments', count: v => v.split(',').length },
         { key: 'last_updated', label: 'Last Updated', format: v => fmt(v) }
       ]
     }
@@ -166,6 +176,7 @@ export default {
       }
     },
     startEdit (request) {
+      console.log(request)
       this.editingRequest = request
       this.showForm = true
     },
@@ -187,7 +198,7 @@ export default {
       return new Date().toISOString().slice(0, 10)
     },
     formatDate (value) {
-      if (!value) return '\u2014'
+      if (!value || parseInt(value) === 0) return '\u2014'
       const date = new Date(`${value}T00:00:00`)
       if (Number.isNaN(date.getTime())) return value
       return date.toLocaleDateString(undefined, {

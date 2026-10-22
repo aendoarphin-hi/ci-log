@@ -58,7 +58,12 @@
         <tbody>
           <tr v-for="item in sortedItems" :key="item.id">
             <td v-for="column in displayColumns" :key="column.key">
-              {{ cellValue(item, column) }}
+              <template v-if="column.statuses">
+                <div :class="column.statuses ? column.statuses[cellValue(item,column)] + ' badge text-capitalize' : ''">
+                  {{ cellValue(item, column) }}
+                </div>
+              </template>
+              <template v-else>{{ cellValue(item, column) }}</template>
             </td>
             <td>
               <div class="d-flex gap-1">
@@ -187,10 +192,13 @@ export default {
       if (column.format) {
         return column.format(value, item)
       }
+      if (column.count) {
+        return column.count(value, item)
+      }
       return value
     },
     formatDate (value) {
-      if (!value) return '\u2014'
+      if (!value || parseInt(value) === 0) return '\u2014'
       const date = new Date(`${value}T00:00:00`)
       if (Number.isNaN(date.getTime())) return value
       return date.toLocaleDateString(undefined, {
