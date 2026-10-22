@@ -59,6 +59,10 @@ $font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
 
 body {
   background-color: $body-bg;
+  
+  .cursor-pointer {
+    cursor: pointer;
+  }
 }
 
 .app-shell {

@@ -3,7 +3,16 @@ module.exports = {
     ? '/ttprod/v3/improvement'
     : '/',
   devServer: {
-    proxy: 'http://localhost/ttprod/v3/improvement'
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': '/ttprod/v3/improvement/api'
+        }
+      }
+    }
   },
   transpileDependencies: true
 }

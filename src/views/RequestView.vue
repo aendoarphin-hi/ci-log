@@ -58,8 +58,6 @@ import ResourceForm from '../components/ResourceForm.vue'
 import ResourceGrid from '../components/ResourceGrid.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
-const STORAGE_KEY = 'ci-log'
-
 export default {
   name: 'RequestView',
   components: {
@@ -102,7 +100,8 @@ export default {
         },
         { key: 'startDate', label: 'Start date', type: 'date', required: true },
         { key: 'endDate', label: 'Target completion date', type: 'date' },
-        { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses }
+        { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses },
+        { key: 'files', label: 'Attachments', type: 'file' }
       ]
     },
     blankRequest () {
@@ -112,11 +111,12 @@ export default {
         stakeholders: '',
         startDate: '',
         endDate: '',
-        status: 'New'
+        status: 'new',
+        files: []
       }
     },
     requestStatuses () {
-      return ['New', 'In Progress', 'On Hold', 'Complete']
+      return ['new', 'in progress', 'on hold', 'complete']
     },
     tableColumns () {
       const fmt = this.formatDate
@@ -135,38 +135,35 @@ export default {
     this.loadRequests()
   },
   methods: {
-    loadRequests () {
+    async loadRequests () {
       try {
-        this.requests = fetch(this.$api)
-        console.log(raw)
-        this.requests = raw ? JSON.parse(raw) : []
+        this.requests = (await this.$axios.get(this.$api + '?requests')).data || []
       } catch (err) {
         console.error('Could not load saved requests', err)
         this.requests = []
       }
     },
-    persist () {
+    submitRequest () {
       try {
-        console.log(this.requests)
+        console.log('submit the request')
       } catch (err) {
         console.error('Could not save requests', err)
       }
     },
-    saveRequest (payload) {
-      if (payload.id) {
-        const index = this.requests.findIndex(r => r.id === payload.id)
-        if (index !== -1) {
-          this.requests.splice(index, 1, { ...this.requests[index], ...payload })
-        }
-      } else {
-        this.requests.push({
-          ...payload,
-          id: this.generateId(),
-          dateLogged: this.today()
-        })
+    async saveRequest (body) {
+      try {
+        const response = await this.$axios.post(
+          this.$api + '?request&new',
+          body
+        )
+
+        console.log('Request saved:', response.data)
+
+        await this.loadRequests()
+        this.cancelEdit()
+      } catch (err) {
+        console.error('Could not save request', err)
       }
-      this.submitRequest()
-      this.cancelEdit()
     },
     startEdit (request) {
       this.editingRequest = request

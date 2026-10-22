@@ -11,8 +11,8 @@ const app = createApp(App)
 
 app.config.globalProperties = {
   $webroot: process.env.NODE_ENV === 'production'
-    ? window.location.origin // prod applist
-    : 'http://10.10.8.156', // your dev applist
+    ? window.location.origin
+    : window.location.protocol + '//' + window.location.hostname,
   $version: '2026.1021.1',
   $api: '/ttprod/v3/improvement/api/',
   $axios: axios
@@ -20,4 +20,5 @@ app.config.globalProperties = {
 
 app
   .use(router)
+  // import a helper function globally
   .mount('#app')

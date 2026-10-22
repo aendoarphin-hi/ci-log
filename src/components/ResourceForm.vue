@@ -17,7 +17,8 @@
             class="form-control"
             :rows="field.rows || 2"
             :placeholder="field.placeholder || ''"
-            :required="field.required"></textarea>
+            :required="field.required"
+          ></textarea>
 
           <input
             v-else-if="field.type === 'date'"
@@ -25,22 +26,40 @@
             type="date"
             class="form-control"
             :placeholder="field.placeholder || ''"
-            :required="field.required" />
+            :required="field.required"
+          />
 
           <select
             v-else-if="field.type === 'select'"
             v-model="form[field.key]"
-            class="form-select">
+            class="form-select text-capitalize"
+          >
             <option v-if="field.placeholder" value="" disabled>
               {{ field.placeholder }}
             </option>
-            <option
-              v-for="option in field.options"
-              :key="option"
-              :value="option">
+            <option v-for="option in field.options" :key="option" :value="option">
               {{ option }}
             </option>
           </select>
+
+          <div v-else-if="field.type === 'file'">
+            <input
+              ref="fileInput"
+              @change="handleFileChange"
+              type="file"
+              multiple
+              class="form-control"
+            />
+
+            <span v-for="(f, i) in form.files" :key="f.name" class="mt-1">
+              <span
+                @click="removeFile(i)"
+                class="me-1 cursor-pointer badge text-secondary bg-light"
+              >
+                {{ f.name }} <span class="text-danger">&times;</span>
+              </span>
+            </span>
+          </div>
 
           <input
             v-else
@@ -48,7 +67,10 @@
             type="text"
             class="form-control"
             :placeholder="field.placeholder || ''"
-            :required="field.required" />
+            :required="field.required"
+          />
+
+          <!-- add multiple files input for adding document attachments -->
         </div>
 
         <div class="d-flex gap-2 justify-content-end">
@@ -59,14 +81,16 @@
             v-if="editingItem"
             type="button"
             class="btn btn-outline-secondary"
-            @click="$emit('cancel-edit')">
+            @click="$emit('cancel-edit')"
+          >
             Cancel
           </button>
           <button
             v-else
             type="button"
             class="btn btn-outline-secondary"
-            @click="$emit('cancel-add')">
+            @click="$emit('cancel-add')"
+          >
             Cancel
           </button>
         </div>
@@ -99,7 +123,8 @@ export default {
   emits: ['save', 'cancel-edit', 'cancel-add'],
   data () {
     return {
-      form: {}
+      form: {},
+      fileInputElement: null
     }
   },
   computed: {
@@ -125,28 +150,71 @@ export default {
   },
   methods: {
     handleSubmit () {
-      this.$emit('save', { ...this.form })
+      const body = new FormData()
+
+      // Send regular fields as JSON.
+      body.append(
+        'request',
+        JSON.stringify(
+          Object.fromEntries(Object.entries(this.form).filter(([key]) => key !== 'files'))
+        )
+      )
+
+      // Send files separately.
+      this.form.files.forEach((file) => {
+        body.append('files[]', file)
+      })
+
+      if (
+        !window.confirm(
+          JSON.stringify(
+            {
+              ...this.form,
+              files: this.form.files.map((file) => file.name)
+            },
+            null,
+            2
+          )
+        )
+      ) { return }
+
+      this.$emit('save', body)
+
       if (!this.editingId) {
-        this.form = { ...this.blankItem }
+        this.form = { ...this.blankItem, files: [] }
       }
+    },
+
+    handleFileChange (event) {
+      this.fileInputElement = event.target
+      this.form.files = Array.from(event.target.files)
+    },
+
+    removeFile (i) {
+      this.form.files.splice(i, 1)
+
+      const dataTransfer = new DataTransfer()
+      this.form.files.forEach((file) => dataTransfer.items.add(file))
+
+      this.fileInputElement.files = dataTransfer.files
     }
   }
 }
 </script>
 
 <style scoped>
-.card-form {
-  border: 1px solid var(--neutral-lightest);
-}
+  .card-form {
+    border: 1px solid var(--neutral-lightest);
+  }
 
-.card-form .card-header {
-  background-color: var(--hayden-blue-lighter);
-  border-bottom: 1px solid var(--neutral-lightest);
-  font-weight: 600;
-  color: white;
-}
+  .card-form .card-header {
+    background-color: var(--hayden-blue-lighter);
+    border-bottom: 1px solid var(--neutral-lightest);
+    font-weight: 600;
+    color: white;
+  }
 
-.required-mark {
-  color: var(--bs-danger);
-}
+  .required-mark {
+    color: var(--bs-danger);
+  }
 </style>

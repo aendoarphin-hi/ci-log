@@ -3,68 +3,42 @@
     <div class="page-heading d-flex align-items-start justify-content-between flex-wrap gap-2">
       <div>
         <h1>Approvals</h1>
-        <p>View existing approvals or submit a new one</p>
+        <p>Approve or reject incoming requests</p>
       </div>
     </div>
 
     <div v-if="showForm" class="mb-4">
-      <ResourceForm
-        :editing-item="editingRequest"
-        :fields="approvalFields"
-        :blank-item="blankApproval"
-        resource-name="Approval"
-        @save="saveRequest"
-        @cancel-edit="cancelEdit"
-        @cancel-add="cancelAdd"
-      />
+      <!-- some form -->
     </div>
 
     <ResourceTable v-if="!showForm"
       class="d-none d-lg-block"
-      :items="requests"
+      :items="approvals"
       :columns="tableColumns"
       item-name="approval"
       :search-fields="['title', 'description']"
       status-key="status"
       :statuses="approvalStatuses"
       @edit="startEdit"
-      @delete="deleteRequest"
+      @delete="deleteApproval"
     />
 
-    <ResourceGrid v-if="!showForm"
-      class="d-lg-none"
-      :items="requests"
-      :columns="tableColumns"
-      item-name="approval"
-      title-field="title"
-      :search-fields="['title', 'description']"
-      status-key="status"
-      :statuses="approvalStatuses"
-      @edit="startEdit"
-      @delete="deleteRequest"
-    />
   </div>
 </template>
 
 <script>
-import ResourceForm from '../components/ResourceForm.vue'
-import ResourceGrid from '../components/ResourceGrid.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
-const STORAGE_KEY = 'ci-log'
-
 export default {
-  name: 'RequestView',
+  name: 'ApprovalView',
   components: {
-    ResourceForm,
-    ResourceTable,
-    ResourceGrid
+    ResourceTable
   },
   data () {
     return {
-      requests: [],
+      approvals: [],
       showForm: false,
-      editingRequest: null
+      editingApproval: null
     }
   },
   computed: {
@@ -109,55 +83,54 @@ export default {
     }
   },
   mounted () {
-    this.loadRequests()
+    this.loadApprovals()
   },
   methods: {
-    loadRequests () {
+    async loadApprovals () {
       try {
-        const raw = window.localStorage.getItem(STORAGE_KEY)
-        this.requests = raw ? JSON.parse(raw) : []
+        this.approvals = (await this.$axios.get(this.$api + '?approvals')).data || []
       } catch (err) {
-        console.error('Could not load saved requests', err)
-        this.requests = []
+        console.error('Could not load saved approvals', err)
+        this.approvals = []
       }
     },
-    persist () {
+    submitApproval () {
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.requests))
+        console.log('create the approval')
       } catch (err) {
-        console.error('Could not save requests', err)
+        console.error('Could create approval', err)
       }
     },
-    saveRequest (payload) {
+    saveApproval (payload) {
       if (payload.id) {
-        const index = this.requests.findIndex(r => r.id === payload.id)
+        const index = this.approvals.findIndex(r => r.id === payload.id)
         if (index !== -1) {
-          this.requests.splice(index, 1, { ...this.requests[index], ...payload })
+          this.approvals.splice(index, 1, { ...this.approvals[index], ...payload })
         }
       } else {
-        this.requests.push({
+        this.approvals.push({
           ...payload,
           id: this.generateId(),
           dateLogged: this.today()
         })
       }
-      this.persist()
+      this.submitApproval()
       this.cancelEdit()
     },
-    startEdit (request) {
-      this.editingRequest = request
+    startEdit (approval) {
+      this.editingApproval = approval
       this.showForm = true
     },
     cancelEdit () {
-      this.editingRequest = null
+      this.editingApproval = null
       this.showForm = false
     },
     cancelAdd () {
       this.showForm = false
     },
-    deleteRequest (id) {
-      this.requests = this.requests.filter(r => r.id !== id)
-      this.persist()
+    deleteApproval (id) {
+      this.approval = this.approvals.filter(r => r.id !== id)
+      // call delete approval endpoint
     },
     generateId () {
       return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
