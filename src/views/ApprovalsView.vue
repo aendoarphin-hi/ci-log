@@ -11,34 +11,20 @@
       <!-- some form -->
     </div>
 
-    <ResourceTable v-if="!showForm"
-      class="d-none d-lg-block"
-      :items="approvals"
-      :columns="tableColumns"
-      item-name="approval"
-      :search-fields="['title', 'description']"
-      status-key="status"
-      :statuses="approvalStatuses"
-      @edit="startEdit"
-      @delete="deleteApproval"
-    />
+    <!-- some table -->
 
   </div>
 </template>
 
 <script>
-import ResourceTable from '../components/ResourceTable.vue'
 
 export default {
   name: 'ApprovalView',
   components: {
-    ResourceTable
   },
   data () {
     return {
-      approvals: [],
-      showForm: false,
-      editingApproval: null
+      // some data
     }
   },
   computed: {

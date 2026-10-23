@@ -32,21 +32,8 @@
       :columns="tableColumns"
       item-name="project"
       :search-fields="['name', 'description', 'owner']"
-      status-key="status"
-      :statuses="projectStatuses"
-      @edit="startEdit"
-      @delete="deleteProject"
-    />
-
-    <ResourceGrid v-if="!showForm"
-      class="d-lg-none"
-      :items="projects"
-      :columns="tableColumns"
-      item-name="project"
-      title-field="name"
-      :search-fields="['name', 'description', 'owner']"
-      status-key="status"
-      :statuses="projectStatuses"
+      filterable-field-key="status"
+      :filter-options="projectStatuses"
       @edit="startEdit"
       @delete="deleteProject"
     />
@@ -55,7 +42,6 @@
 
 <script>
 import ResourceForm from '../components/ResourceForm.vue'
-import ResourceGrid from '../components/ResourceGrid.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
 const STORAGE_KEY = 'ci-log-projects'
@@ -64,8 +50,7 @@ export default {
   name: 'ProjectView',
   components: {
     ResourceForm,
-    ResourceTable,
-    ResourceGrid
+    ResourceTable
   },
   data () {
     return {

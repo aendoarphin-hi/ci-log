@@ -10,8 +10,8 @@
       </div>
       <div class="app-header__nav">
         <router-link to="/requests" :class="{ 'border-bottom border-primary': this.$route.name === 'Requests' }">Requests</router-link>
-        <router-link to="/projects" :class="{ 'border-bottom border-primary': this.$route.name === 'Projects'}">Projects</router-link>
-        <router-link to="/approvals" :class="{ 'border-bottom border-primary': this.$route.name === 'Approvals'}">Approvals</router-link>
+        <router-link hidden to="/projects" :class="{ 'border-bottom border-primary': this.$route.name === 'Projects'}">Projects</router-link>
+        <router-link hidden to="/approvals" :class="{ 'border-bottom border-primary': this.$route.name === 'Approvals'}">Approvals</router-link>
       </div>
     </header>
 

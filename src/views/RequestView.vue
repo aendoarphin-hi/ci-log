@@ -17,7 +17,8 @@
     <div v-if="showForm" class="mb-4">
       <ResourceForm
         :editing-item="editingRequest"
-        :fields="formFields"
+        :fields="requestFormFields"
+        :key-map="dateKeyMap"
         :blank-item="blankRequest"
         resource-name="Request"
         @save="saveRequest"
@@ -27,26 +28,13 @@
     </div>
 
     <ResourceTable v-if="!showForm"
-      class="d-none d-lg-block"
+      class="d-none d-sm-block"
       :items="requests"
       :columns="tableColumns"
       item-name="request"
-      :search-fields="['objective', 'scope', 'stakeholders']"
-      status-key="status"
-      :statuses="requestStatuses"
-      @edit="startEdit"
-      @delete="deleteRequest"
-    />
-
-    <ResourceGrid v-if="!showForm"
-      class="d-lg-none"
-      :items="requests"
-      :columns="tableColumns"
-      item-name="request"
-      title-field="objective"
-      :search-fields="['objective', 'scope', 'stakeholders']"
-      status-key="status"
-      :statuses="requestStatuses"
+      :search-fields="['objective', 'scope', 'stakeholders', 'status']"
+      filterable-field-key="status"
+      :filter-options="requestStatuses"
       @edit="startEdit"
       @delete="deleteRequest"
     />
@@ -55,7 +43,6 @@
 
 <script>
 import ResourceForm from '../components/ResourceForm.vue'
-import ResourceGrid from '../components/ResourceGrid.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
 const REQUEST_STATUS_BADGE_CLASSES = {
@@ -69,8 +56,7 @@ export default {
   name: 'RequestView',
   components: {
     ResourceForm,
-    ResourceTable,
-    ResourceGrid
+    ResourceTable
   },
   data () {
     return {
@@ -80,7 +66,7 @@ export default {
     }
   },
   computed: {
-    formFields () {
+    requestFormFields () {
       return [
         {
           key: 'objective',
@@ -107,7 +93,7 @@ export default {
         },
         { key: 'startDate', label: 'Start date', type: 'date', required: true },
         { key: 'endDate', label: 'Target completion', type: 'date' },
-        { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses },
+        { key: 'status', label: 'Status', type: 'select', options: this.requestStatuses, dateKeyMap: this.dateKeyMap },
         { key: 'files', label: 'Attachments', type: 'file' }
       ]
     },
@@ -125,16 +111,22 @@ export default {
     requestStatuses () {
       return ['new', 'in progress', 'on hold', 'complete']
     },
+    dateKeyMap () {
+      return {
+        startDate: 'start_date',
+        endDate: 'end_date'
+      }
+    },
     tableColumns () {
       const fmt = this.formatDate
       // key = db column name
       return [
-        { key: 'created_at', label: 'Date Logged', format: v => fmt(v) },
+        { key: 'created_at', label: 'Date Logged', format: v => fmt(v.split(' ')[0]) },
         { key: 'objective', label: 'Objective' },
         { key: 'scope', label: 'Scope' },
         { key: 'stakeholders', label: 'Stakeholders' },
         { key: 'start_date', label: 'Start', format: v => fmt(v) },
-        { key: 'end_date', label: 'Target Completion Date', format: v => fmt(v) },
+        { key: 'end_date', label: 'Targeted End Date', format: v => fmt(v) },
         { key: 'status', label: 'Status', statuses: REQUEST_STATUS_BADGE_CLASSES },
         { key: 'files', label: 'Attachments', count: v => v.split(',').length },
         { key: 'last_updated', label: 'Last Updated', format: v => fmt(v) }
@@ -162,10 +154,18 @@ export default {
     },
     async saveRequest (body) {
       try {
-        const response = await this.$axios.post(
-          this.$api + '?request&new',
-          body
-        )
+        let response
+        if (this.editingRequest?.id) {
+          response = await this.$axios.post(
+            this.$api + `?request&edit&id=${this.editingRequest.id}`,
+            body
+          )
+        } else {
+          response = await this.$axios.post(
+            this.$api + '?request&new',
+            body
+          )
+        }
 
         console.log('Request saved:', response.data)
 
@@ -176,7 +176,6 @@ export default {
       }
     },
     startEdit (request) {
-      console.log(request)
       this.editingRequest = request
       this.showForm = true
     },
@@ -188,8 +187,7 @@ export default {
       this.showForm = false
     },
     deleteRequest (id) {
-      this.requests = this.requests.filter(r => r.id !== id)
-      this.submitRequest()
+      console.log('send request to delete', id)
     },
     generateId () {
       return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

@@ -1,4 +1,5 @@
 <template>
+  <!-- GENERIC TABLE; ARBITRARY FIELDS/VALUES/TYPES MUST BEPASSED IN AS PROPS -->
   <div>
     <div
       class="d-flex flex-wrap align-items-center justify-content-between toolbar mb-3">
@@ -10,13 +11,13 @@
           style="min-width: 370px; width: 270px"
           :placeholder="`Search ${searchableLabels.join(', ')}`" />
         <select
-          v-if="hasStatusFilter"
-          v-model="statusFilter"
+          v-if="hasFilterField"
+          v-model="filterValue"
           class="form-select"
           style="max-width: 170px">
-          <option value="">All Statuses</option>
-          <option v-for="status in statuses" :key="status" :value="status">
-            {{ status }}
+          <option value="">All</option>
+          <option v-for="opt in filterOptions" :key="opt" :value="opt">
+            {{ opt }}
           </option>
         </select>
       </div>
@@ -56,30 +57,37 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in sortedItems" :key="item.id">
-            <td v-for="column in displayColumns" :key="column.key">
-              <template v-if="column.statuses">
-                <div :class="column.statuses ? column.statuses[cellValue(item,column)] + ' badge text-capitalize' : ''">
-                  {{ cellValue(item, column) }}
+          <template v-if="sortedItems.length === 0 && searchTerm !== ''">
+            <tr>
+              <td :colspan="displayColumns.length + 1" class="p-5 text-center">No results found.</td>
+            </tr>
+          </template>
+          <template v-else>
+            <tr v-for="item in sortedItems" :key="item.id">
+              <td v-for="column in displayColumns" :key="column.key">
+                <template v-if="column.statuses">
+                  <div :class="column.statuses ? column.statuses[cellValue(item,column)] + ' badge text-capitalize' : ''">
+                    {{ cellValue(item, column) }}
+                  </div>
+                </template>
+                <template v-else>{{ cellValue(item, column) }}</template>
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="$emit('edit', item)">
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    @click="$emit('delete', item.id)">
+                    Delete
+                  </button>
                 </div>
-              </template>
-              <template v-else>{{ cellValue(item, column) }}</template>
-            </td>
-            <td>
-              <div class="d-flex gap-1">
-                <button
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="$emit('edit', item)">
-                  Edit
-                </button>
-                <button
-                  class="btn btn-sm btn-outline-danger"
-                  @click="$emit('delete', item.id)">
-                  Delete
-                </button>
-              </div>
-            </td>
-          </tr>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -106,11 +114,11 @@ export default {
       type: Array,
       default: () => []
     },
-    statusKey: {
+    filterableFieldKey: {
       type: String,
       default: 'status'
     },
-    statuses: {
+    filterOptions: {
       type: Array,
       default: () => []
     }
@@ -119,7 +127,7 @@ export default {
   data () {
     return {
       searchTerm: '',
-      statusFilter: '',
+      filterValue: '',
       sortKey: this.defaultSortKey,
       sortDir: 'desc'
     }
@@ -131,8 +139,8 @@ export default {
     displayColumns () {
       return this.columns.filter((column) => column.key !== '__actions__')
     },
-    hasStatusFilter () {
-      return this.statuses.length > 0
+    hasFilterField () {
+      return this.filterOptions.length > 0
     },
     searchableFields () {
       return this.searchFields.length
@@ -147,7 +155,7 @@ export default {
     },
     filteredItems () {
       const term = this.searchTerm.toLowerCase()
-      const status = this.statusFilter
+      const fieldValue = this.filterValue
       return this.items.filter((item) => {
         const matchesTerm = this.searchableFields.some((key) => {
           const value = this.cellValue(item, { key })
@@ -155,9 +163,9 @@ export default {
             .toLowerCase()
             .includes(term)
         })
-        const matchesStatus =
-          !status || String(item[this.statusKey]) === status
-        return matchesTerm && matchesStatus
+        const matchesFieldValue =
+          !fieldValue || String(item[this.filterFieldKey]) === fieldValue
+        return matchesTerm && matchesFieldValue
       })
     },
     sortedItems () {
@@ -206,15 +214,6 @@ export default {
         month: 'short',
         day: 'numeric'
       })
-    },
-    statusClass (status) {
-      const map = {
-        New: 'status-pill--new',
-        'In Progress': 'status-pill--in-progress',
-        'On Hold': 'status-pill--on-hold',
-        Complete: 'status-pill--complete'
-      }
-      return map[status] || 'status-pill--new'
     }
   }
 }
@@ -243,6 +242,8 @@ div::-webkit-scrollbar-thumb {
   border-collapse: collapse;
   width: 100%;
 }
+
+.table.ci-table { margin-bottom: 0; }
 
 .ci-table thead th {
   background-color: var(--hayden-blue-lighter);
@@ -273,35 +274,6 @@ div::-webkit-scrollbar-thumb {
 .ci-table td {
   font-size: 0.88rem;
   vertical-align: middle;
-}
-
-.status-pill {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.status-pill--new {
-  background-color: #1c76bb48;
-  color: var(--hayden-blue-dark);
-}
-
-.status-pill--in-progress {
-  background-color: #ffc10749;
-  color: darken(var(--warning), 15%);
-}
-
-.status-pill--complete {
-  background-color: #19875454;
-  color: darken(var(--success), 10%);
-}
-
-.status-pill--on-hold {
-  background-color: var(--neutral-lightest);
-  color: var(--neutral-dark);
 }
 
 .toolbar {

@@ -68,7 +68,7 @@ body {
 .app-main {
   flex: 1;
   padding: 1.75rem 1.5rem 3rem;
-  max-width: 1080px;
+  max-width: max-content;
   width: 100%;
   margin: 0 auto;
 }
@@ -98,12 +98,12 @@ body {
 
 .app-header__title {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .01em;
 }
 
 .app-header__subtitle {
-  font-size: .8rem;
+  font-size: 1rem;
 }
 
 .app-header__nav {

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import RequestView from '../views/RequestView.vue'
-import ProjectView from '../views/ProjectView.vue'
-import ApprovalsView from '../views/ApprovalsView.vue'
+// import ProjectView from '../views/ProjectView.vue'
+// import ApprovalsView from '../views/ApprovalsView.vue'
 
 const routes = [
   {
@@ -9,16 +9,17 @@ const routes = [
     name: 'Requests',
     component: RequestView
   },
-  {
-    path: '/projects',
-    name: 'Projects',
-    component: ProjectView
-  },
-  {
-    path: '/approvals',
-    name: 'Approvals',
-    component: ApprovalsView
-  },
+  // { TBD: depends on whether Lindsey wants a dedicated page for these
+  //        or to just mutate the existing table records
+  //   path: '/projects',
+  //   name: 'Projects',
+  //   component: ProjectView
+  // },
+  // {
+  //   path: '/approvals',
+  //   name: 'Approvals',
+  //   component: ApprovalsView
+  // },
   {
     path: '/:catchAll(.*)',
     redirect: '/'
