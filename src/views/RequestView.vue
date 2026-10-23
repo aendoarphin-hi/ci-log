@@ -46,7 +46,7 @@ import ResourceForm from '../components/ResourceForm.vue'
 import ResourceTable from '../components/ResourceTable.vue'
 
 const REQUEST_STATUS_BADGE_CLASSES = {
-  new: 'bg-info-subtle text-info-emphasis',
+  new: 'bg-info-subtle text-info-emphasis border border-1',
   'in progress': 'bg-warning-subtle text-warning-emphasis',
   'on hold': 'bg-secondary opacity-50',
   complete: 'bg-success-subtle text-success-emphasis'
@@ -61,6 +61,7 @@ export default {
   data () {
     return {
       requests: [],
+      employees: [],
       showForm: false,
       editingRequest: null
     }
@@ -69,10 +70,16 @@ export default {
     requestFormFields () {
       return [
         {
+          key: 'submittedBy',
+          label: 'Submitted By',
+          type: 'text',
+          hidden: true
+        },
+        {
           key: 'objective',
           label: 'Objective',
           type: 'textarea',
-          rows: 2,
+          rows: 4,
           placeholder: 'What is the purpose of this request? What\'s the benefit, and how does it add value to an existing process?',
           required: true
         },
@@ -99,6 +106,7 @@ export default {
     },
     blankRequest () {
       return {
+        submittedBy: '',
         objective: '',
         scope: '',
         stakeholders: '',
@@ -122,19 +130,21 @@ export default {
       // key = db column name
       return [
         { key: 'created_at', label: 'Date Logged', format: v => fmt(v.split(' ')[0]) },
+        { key: 'submitted_by', label: 'Submitted By', format: v => this.employees.find(e => e.number === v)?.name || '\u2014' },
         { key: 'objective', label: 'Objective' },
         { key: 'scope', label: 'Scope' },
         { key: 'stakeholders', label: 'Stakeholders' },
         { key: 'start_date', label: 'Start', format: v => fmt(v) },
         { key: 'end_date', label: 'Targeted End Date', format: v => fmt(v) },
         { key: 'status', label: 'Status', statuses: REQUEST_STATUS_BADGE_CLASSES },
-        { key: 'files', label: 'Attachments', count: v => v.split(',').length },
+        { key: 'files', label: 'Attachments', attachments: true, count: v => v.split(',').length },
         { key: 'last_updated', label: 'Last Updated', format: v => fmt(v) }
       ]
     }
   },
   mounted () {
     this.loadRequests()
+    this.loadEmployees()
   },
   methods: {
     async loadRequests () {
@@ -145,11 +155,12 @@ export default {
         this.requests = []
       }
     },
-    submitRequest () {
+    async loadEmployees () {
       try {
-        console.log('submit the request')
+        this.employees = (await this.$axios.get(this.$api + '?emp')).data || []
       } catch (err) {
-        console.error('Could not save requests', err)
+        console.error('Could not load employees', err)
+        this.employees = []
       }
     },
     async saveRequest (body) {
@@ -186,8 +197,16 @@ export default {
     cancelAdd () {
       this.showForm = false
     },
-    deleteRequest (id) {
-      console.log('send request to delete', id)
+    async deleteRequest (id) {
+      console.log('deleting the request', id)
+      try {
+        const body = new FormData()
+        body.append('id', id)
+        await this.$axios.post(this.$api + '?request&delete', body)
+        this.loadRequests()
+      } catch (err) {
+        console.error('Could not delete request', err)
+      }
     },
     generateId () {
       return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

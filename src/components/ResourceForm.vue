@@ -6,7 +6,7 @@
     </div>
     <div class="card-body">
       <form @submit.prevent="handleSubmit">
-        <div v-for="field in fields" :key="field.key" class="mb-3">
+        <div :hidden="field.hidden" v-for="field in fields" :key="field.key" class="mb-3">
           <label class="form-label">
             {{ field.label }}
             <span v-if="field.required" class="required-mark">*</span>
@@ -43,7 +43,7 @@
             </option>
           </select>
 
-          <div v-else-if="field.type === 'file'">
+          <div v-else-if="field.type === 'file'" :hidden="field.hidden">
             <input
               ref="fileInput"
               @change="handleFileChange"
@@ -51,8 +51,8 @@
               multiple
               class="form-control"
             />
-            <small v-if="form.files.length > 0" class="form-text text-muted d-block">Incoming</small>
-            <template v-if="form.files.length > 0">
+            <div v-if="form.files.length > 0" class="attachments-container">
+              <small class="form-text text-muted d-block">Incoming</small>
               <span v-for="(f, i) in form.files" :key="i" class="mt-1">
                 <span
                   @click="removeFile(i)"
@@ -61,10 +61,9 @@
                   {{ f.name }} <span class="text-danger">&times;</span>
                 </span>
               </span>
-            </template>
-            <small v-if="attachedFiles.length > 0" class="form-text text-muted d-block">Existing</small>
-            <template v-if="attachedFiles.length > 0">
-              <!-- list all attached files of the editing item -->
+            </div>
+            <div v-if="attachedFiles.length > 0" class="attachments-container">
+              <small class="form-text text-muted d-block">Existing</small>
               <span v-for="(f, i) in attachedFiles" :key="i" class="mt-1">
                 <span
                   @click="removeStoredFile(i)"
@@ -73,11 +72,12 @@
                   {{ f.name }} <small>({{ formatFileSize(f.size) }})</small> <span class="text-danger">&times;</span>
                 </span>
               </span>
-            </template>
+            </div>
           </div>
 
           <input
             v-else
+            :hidden="field.hidden"
             v-model.trim="form[field.key]"
             type="text"
             class="form-control"
@@ -184,11 +184,15 @@ export default {
           this.form = { ...this.blankItem, files: [] }
         }
         // fetch and populate existing attached files (skip nulls).
-        const csvIds = item?.files?.split(',') || []
+        const csvIds = item?.files
+          ? item.files.split(',').filter(id => id.trim() !== '')
+          : []
 
         this.attachedFiles = []
+
         for (const id of csvIds) {
           const response = await this.$axios.get(this.$api + '?docs&id=' + id)
+
           if (response.data && response.data.id) {
             this.attachedFiles.push(response.data)
           }
@@ -199,7 +203,7 @@ export default {
   methods: {
     handleSubmit () {
       const body = new FormData()
-
+      console.log(this.form)
       // send regular fields as JSON, excluding files.
       body.append(
         'request',
@@ -251,7 +255,7 @@ export default {
       if (bytes === 0) return '0 Bytes'
       const k = 1024
       const dm = bytes < k ? 0 : 1
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
       const i = Math.floor(Math.log(bytes) / Math.log(k))
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
     }
@@ -278,5 +282,9 @@ export default {
 
   .required-mark {
     color: var(--bs-danger);
+  }
+
+  .attachments-container {
+    max-width: 700px;
   }
 </style>
