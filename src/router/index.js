@@ -1,39 +1,58 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import RequestView from '../views/RequestView.vue'
-// import ProjectView from '../views/ProjectView.vue'
-// import ApprovalsView from '../views/ApprovalsView.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import RequestView from "../views/RequestView.vue";
+import axios from "axios";
+import { store } from "../common/store.js";
 
 const routes = [
   {
-    path: '/',
-    name: 'Requests',
-    component: RequestView
+    path: "/",
+    name: "Requests",
+    component: RequestView,
   },
-  // { TBD: depends on whether Lindsey wants a dedicated page for these
-  //        or to just mutate the existing table records
-  //   path: '/projects',
-  //   name: 'Projects',
-  //   component: ProjectView
-  // },
-  // {
-  //   path: '/approvals',
-  //   name: 'Approvals',
-  //   component: ApprovalsView
-  // },
   {
-    path: '/:catchAll(.*)',
-    redirect: '/'
-  }
-]
+    path: "/login",
+    name: "Login",
+    component: () => import("../views/LoginView.vue"),
+  },
+  {
+    path: "/unauthorized",
+    name: "Unauthorized",
+    component: () => import("../views/UnauthorizedView.vue"),
+  },
+  {
+    path: "/:catchAll(.*)",
+    redirect: "/",
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes
-})
+  routes,
+});
 
-router.beforeEach((to, from, next) => {
-  document.title += ' - ' + to.name
-  next()
-})
+router.beforeEach(async (to) => {
+  store.userAuth = (await axios.get(`${process.env.BASE_URL}api/?auth`)).data;
 
-export default router
+  // already logged in
+  if (store.userAuth.id && to.name === "Login") {
+    return "/";
+  }
+
+  // not logged in
+  if (!store.userAuth.id && to.name !== "Login") {
+    return "/login";
+  }
+
+  // not in required group
+  if (
+    store.userAuth.id &&
+    to.name !== "Unauthorized" &&
+    !Object.values(store.userAuth.groups).includes("Continuous Improvement")
+  ) {
+    return "/unauthorized";
+  }
+
+  document.title = `${to.name} | Continuous Improvement`;
+});
+
+export default router;
