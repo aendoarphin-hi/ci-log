@@ -243,16 +243,6 @@
         }
         return value;
       },
-      formatDate(value) {
-        if (!value || parseInt(value) === 0) return "\u2014";
-        const date = new Date(`${value}T00:00:00`);
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
-      },
     },
   };
 </script>
