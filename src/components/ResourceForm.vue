@@ -182,7 +182,7 @@
               const value = item[key];
 
               this.form[field.key] =
-                value == null || (field.type === "date" && value === "0000-00-00") ? "" : value;
+                value == null || (field.type === "date" && value === "0000-00-00") ? "N/A" : value;
             }
 
             this.form.files = [];
@@ -247,10 +247,6 @@
 
         this.fileInputElement.files = dataTransfer.files;
       },
-      // remove the actually stored s3 file and db record
-      removeStoredFile(fileId) {
-        // TODO: fetch the file ID, delete s3 file and db record
-      },
       formatFileSize(bytes) {
         if (typeof bytes === "string") bytes = parseInt(bytes);
         if (bytes === 0) return "0 Bytes";
@@ -271,10 +267,11 @@
   }
   .card-form {
     border: 1px solid var(--neutral-lightest);
+    width: 90vw;
+    max-width: 700px;
   }
 
   .card-form textarea.form-control {
-    min-width: 700px;
     min-height: calc(1.5em + 0.75rem + calc(var(--bs-border-width) * 2));
   }
 

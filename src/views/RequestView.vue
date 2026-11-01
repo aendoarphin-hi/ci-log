@@ -264,7 +264,7 @@ export default {
     },
     blankRequest() {
       return {
-        submittedBy: "",
+        submittedBy: store.userAuth.number,
         objective: "",
         scope: "",
         stakeholders: "",
@@ -421,6 +421,10 @@ export default {
         this.loadRequests();
       } catch (err) {
         console.error("Could not delete request", err);
+        this.toast.show(
+          "Could not delete request: Unauthorized",
+          "bg-danger-subtle text-danger-emphasis",
+        );
       }
     },
     clearRejectForm() {
@@ -444,7 +448,7 @@ export default {
         this.toast.show(
           notifyMessage +
             getNameByEmployeeNumber(this.employees, r["submitted_by"]),
-          "bg-danger-subtle text-danger-emphasis",
+          "bg-warning-subtle text-warning-emphasis",
         );
         this.rejecting = false;
         this.showRejectModal = false;

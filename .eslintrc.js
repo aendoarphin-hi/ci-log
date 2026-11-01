@@ -30,6 +30,7 @@ module.exports = {
     'keyword-spacing': 'off',
     'space-before-blocks': 'off',
     'arrow-parens': 'off',
+    'no-unreachable': 'off',
 
     // Potentially restrictive JavaScript rules
     'no-unused-vars': 'off',

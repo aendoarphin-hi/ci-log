@@ -78,7 +78,7 @@
                 </template>
                 <!-- values that have an icon `column.component` next to them -->
                 <template v-else-if="column.icon">
-                  <span class="hstack">
+                  <span class="hstack" v-if="cellValue(item, column) > 0">
                     <component
                       :is="column.icon.component"
                       :class="column.icon.class"
