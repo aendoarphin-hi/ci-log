@@ -182,7 +182,7 @@
               const value = item[key];
 
               this.form[field.key] =
-                value == null || (field.type === "date" && value === "0000-00-00") ? "N/A" : value;
+                value == null || (field.type === "date" && value === "0000-00-00") ? "" : value;
             }
 
             this.form.files = [];

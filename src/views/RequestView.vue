@@ -324,7 +324,7 @@ export default {
           format: (csv) =>
             csv.split(",").filter((str) => str.length > 0).length,
         },
-        { key: "last_updated", label: "Last Updated", format: (v) => fmt(v, true) }, // value, format in time ago
+        { key: "last_updated", label: "Last Updated", format: (v) => fmt(v,) },
       ];
     },
   },
@@ -488,35 +488,28 @@ export default {
         this.clearRejectForm();
       }
     },
-    formatDate(value, timeAgo = false) {
-      if (!value || parseInt(value) === 0) return "\u2014";
-
-      const normalized = String(value).trim().replace(" ", "T");
-      const date = new Date(normalized);
-
-      if (Number.isNaN(date.getTime())) return value;
-
-      if (timeAgo) {
-        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-        const formatter = new Intl.RelativeTimeFormat(undefined, {
-          numeric: "auto",
-        });
-
-        const units = [
-          { limit: 60, divisor: 1, unit: "second" },
-          { limit: 3600, divisor: 60, unit: "minute" },
-          { limit: 86400, divisor: 3600, unit: "hour" },
-          { limit: 2592000, divisor: 86400, unit: "day" },
-          { limit: 31536000, divisor: 2592000, unit: "month" },
-          { limit: Infinity, divisor: 31536000, unit: "year" },
-        ];
-
-        const absSeconds = Math.abs(seconds);
-        const unit = units.find((u) => absSeconds < u.limit);
-        const amount = Math.round(seconds / unit.divisor);
-
-        return formatter.format(-amount, unit.unit);
+    formatDate(value) {
+      if (!value || String(value).startsWith("0000-00-00")) {
+        return "\u2014";
       }
+
+      const match = String(value).trim().match(
+        /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2}))?$/
+      );
+
+      if (!match) return value;
+
+      const [, year, month, day, hours = 0, minutes = 0, seconds = 0] = match;
+
+      // Interpret both DATE and DATETIME as local time.
+      const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hours),
+        Number(minutes),
+        Number(seconds)
+      );
 
       return date.toLocaleDateString(undefined, {
         year: "numeric",
