@@ -185,7 +185,7 @@ export default {
     ResourceTable,
     File,
   },
-  inject: ["toast"],
+  inject: ["toast", "unrestrictedUsers"],
   data() {
     return {
       requests: [],
@@ -200,7 +200,6 @@ export default {
       notify: true,
       showAttachmentsModal: false,
       selectedAttachments: [],
-      unrestrictedUsers: [],
     };
   },
   computed: {
@@ -336,10 +335,6 @@ export default {
     getNameByEmployeeNumber,
     async loadRequests() {
       try {
-        // init the unrestricted users
-        this.unrestrictedUsers =
-          (await this.$axios.get(this.$api + "?unrestricted")).data || [];
-
         this.requests =
           (await this.$axios.get(this.$api + "?requests")).data || [];
 
