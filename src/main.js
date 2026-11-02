@@ -14,7 +14,7 @@ app.config.globalProperties = {
   $webroot: process.env.NODE_ENV === 'production'
     ? window.location.origin
     : window.location.protocol + '//' + window.location.hostname,
-  $version: '2026.1025.1-uat ',
+  $version: '2026.1102.1 ',
   $api: '/ttprod/v3/improvement/api/',
   $axios: axios,
 }
@@ -22,5 +22,4 @@ console.log('Continuous Improvment v' + app.config.globalProperties.$version)
 app
   .use(router)
   .component('ModalComponent', ModalComponent)
-  // import a helper function globally
   .mount('#app')

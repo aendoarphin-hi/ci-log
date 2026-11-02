@@ -185,7 +185,7 @@ export default {
     ResourceTable,
     File,
   },
-  inject: ["toast", "unrestrictedUsers"],
+  inject: ["toast"],
   data() {
     return {
       requests: [],
@@ -200,6 +200,7 @@ export default {
       notify: true,
       showAttachmentsModal: false,
       selectedAttachments: [],
+      unrestrictedUsers: [],
     };
   },
   computed: {
@@ -335,6 +336,10 @@ export default {
     getNameByEmployeeNumber,
     async loadRequests() {
       try {
+        // init the unrestricted users
+        this.unrestrictedUsers =
+          (await this.$axios.get(this.$api + "?unrestricted")).data || [];
+
         this.requests =
           (await this.$axios.get(this.$api + "?requests")).data || [];
 
@@ -486,7 +491,8 @@ export default {
     formatDate(value, timeAgo = false) {
       if (!value || parseInt(value) === 0) return "\u2014";
 
-      const date = new Date(String(value).replace(" ", "T"));
+      const normalized = String(value).trim().replace(" ", "T");
+      const date = new Date(normalized);
 
       if (Number.isNaN(date.getTime())) return value;
 
